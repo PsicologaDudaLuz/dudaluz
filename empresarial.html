@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atendimento Empresarial | Maria da Luz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text: #1e2b26;
+      --muted: #5a6860;
+      --accent: #4f7f71;
+      --bg: #f7f5fb;
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .enterprise {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 1rem 4rem;
+    }
+    .enterprise a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .enterprise header {
+      margin-bottom: 2rem;
+    }
+    .enterprise h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(2.4rem, 5vw, 3.5rem);
+      margin: 0.3rem 0;
+    }
+    .enterprise p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .enterprise__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0;
+    }
+    .enterprise__card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 1.8rem;
+      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 25px 50px rgba(15, 23, 42, 0.12);
+    }
+    .enterprise__card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.3rem;
+    }
+    .enterprise__card ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      color: var(--muted);
+    }
+    .enterprise__cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .enterprise__cta a {
+      padding: 0.95rem 1.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .enterprise__cta a:first-child {
+      background: var(--accent);
+      color: #fff;
+    }
+    .enterprise__cta a:last-child {
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <section class="enterprise">
+    <p><a href="index.html">← voltar ao site</a></p>
+    <header>
+      <p class="tag">Programas corporativos</p>
+      <h1>Atendimento empresarial</h1>
+      <p>Desenvolvo soluções para empresas que desejam cuidar da saúde mental do time, aumentar a escuta entre lideranças
+      e construir ambientes seguros para conversas sensíveis. Cada projeto nasce a partir de entrevistas e diagnóstico interno.</p>
+    </header>
+    <div class="enterprise__grid">
+      <article class="enterprise__card">
+        <h3>Mentorias para lideranças</h3>
+        <p>Planos mensais com encontros 1:1 e materiais de apoio.</p>
+        <ul>
+          <li>Feedback consciente e escuta empática.</li>
+          <li>Gestão emocional em cenários de pressão.</li>
+          <li>Planos de ação acompanhados por métricas.</li>
+        </ul>
+      </article>
+      <article class="enterprise__card">
+        <h3>Plantão psicológico</h3>
+        <p>Atendimento breve para acolher colaboradores em momentos críticos.</p>
+        <ul>
+          <li>Canal sigiloso com triagem em até 24h.</li>
+          <li>Encaminhamento para psicoterapia quando necessário.</li>
+          <li>Relatórios gerais sem identificação individual.</li>
+        </ul>
+      </article>
+      <article class="enterprise__card">
+        <h3>Workshops e palestras</h3>
+        <p>Conteúdos práticos para equipes presenciais ou remotas.</p>
+        <ul>
+          <li>Saúde emocional e prevenção ao burnout.</li>
+          <li>Comunicação não violenta e resolução de conflitos.</li>
+          <li>Rotinas de autocuidado aplicadas ao trabalho.</li>
+        </ul>
+      </article>
+    </div>
+    <div class="enterprise__cta">
+      <a href="https://wa.me/554898515387" target="_blank" rel="noreferrer">Agendar reunião</a>
+      <a href="mailto:psciologaluz@gmail.com">Solicitar portfólio</a>
+    </div>
+  </section>
+</body>
+</html>
