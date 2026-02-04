@@ -182,16 +182,27 @@
     <div class="container footer__content">
       <div>
         <span class="logo">Maria Eduarda Luz</span>
+  
+        <p class="copyright">
+          © <span id="year"></span> Maria Eduarda Luz. Todos os direitos reservados.
+        </p>
       </div>
+  
       <div>
         <a href="tel:+554898515387">+55 48 99851-5387</a>
         <a href="mailto:contato@psicologaluz.com.br">contato@psicologaluz.com.br</a>
       </div>
+  
       <div class="social">
         <a href="https://www.linkedin.com/in/maria-eduarda-martins-silva-da-luz-1a3570197/" target="_blank" rel="noreferrer">LinkedIn</a>
       </div>
     </div>
+  
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
   </footer>
 </body>
 </html>
+
 
