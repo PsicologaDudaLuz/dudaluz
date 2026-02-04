@@ -91,6 +91,7 @@ body {
 }
 
 .logo {
+  margin-bottom: 4px;
   display: flex;
   flex-direction: column;
   font-weight: 600;
