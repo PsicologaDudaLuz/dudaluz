@@ -107,6 +107,13 @@ body {
   text-transform: uppercase;
 }
 
+.copyright {
+    justify-content: center;
+    padding-top: 27px;
+    margin: 0px;
+    display: flex;
+}
+
 .nav__actions {
   display: flex;
   gap: 1.2rem;
