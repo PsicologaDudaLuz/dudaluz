@@ -877,8 +877,8 @@ body {
   flex: 0 0 20px;
 }
 
-.social-name {
-  color: #5fa58f;
+.social__name {
+  color: #4b6f63;
 }
 
 .social__link:hover {
