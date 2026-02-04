@@ -109,10 +109,11 @@ body {
 
 .copyright {
     justify-content: center;
-    padding-top: 27px;
+    padding-top: 6px;
     margin: 0px;
     color: #abaaaa;
     display: flex;
+    font-size: 1.2vh;
 }
 
 #year{
@@ -721,6 +722,7 @@ body {
   margin-top: 4rem;
   padding: 3rem 0 2rem;
   border-top: 1px solid var(--stroke);
+  padding-bottom: 0px;
   font-size: 0.95rem;
 }
 
@@ -745,6 +747,7 @@ body {
 }
 
 .social__icon-link {
+  margin-left: -1px;
   display: inline-flex;
   line-height: 0;          /* impede “altura” extra */
   padding: 2px;            /* área de clique pequena */
