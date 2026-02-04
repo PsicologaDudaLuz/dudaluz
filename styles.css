@@ -111,7 +111,12 @@ body {
     justify-content: center;
     padding-top: 27px;
     margin: 0px;
+    color: #abaaaa;
     display: flex;
+}
+
+.year{
+  margin-right: 5px;
 }
 
 .nav__actions {
