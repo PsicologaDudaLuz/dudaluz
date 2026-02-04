@@ -722,11 +722,11 @@ body {
   margin-top: 4rem;
   padding: 3rem 0 2rem;
   border-top: 1px solid var(--stroke);
-  padding-bottom: 0px;
   font-size: 0.95rem;
 }
 
 .footer__content {
+  padding-bottom: 0px !important;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
