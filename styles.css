@@ -845,3 +845,25 @@ body {
     white-space: normal;
     font-size: clamp(1.6rem, 6vw, 2.2rem);
   }
+.social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.social__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.social__icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.social__link:hover {
+  opacity: 0.9;
+}
