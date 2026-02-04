@@ -877,6 +877,10 @@ body {
   flex: 0 0 20px;
 }
 
+.social-name {
+  color: #5fa58f;
+}
+
 .social__link:hover {
   opacity: 0.9;
 }
