@@ -24,19 +24,14 @@
     p { color: var(--muted); }
     .header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-end; margin-bottom: 1.6rem; }
     .header a { color: var(--accent); text-decoration: none; font-weight: 600; }
-    .stats { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 1.4rem 0 2rem; }
+    .stats { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 1.4rem 0 2rem; }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1rem 1.2rem; box-shadow: 0 8px 28px rgba(15,23,42,.06); }
     .card h3 { margin: 0 0 .45rem; font-size: .88rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
-    .card strong { font-size: 1.5rem; }
-    .lists { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 1.5rem; }
+    .card strong { font-size: 1.4rem; }
+    .lists { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom: 1.5rem; }
     ul { list-style: none; margin: 0; padding: 0; }
     li { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--border); color: var(--muted); }
     li:last-child { border-bottom: 0; }
-    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
-    th, td { text-align: left; padding: .72rem .8rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
-    th { background: #f9fbff; font-size: .82rem; color: var(--muted); font-weight: 600; }
-    tr:last-child td { border-bottom: 0; }
-    .table-wrap { overflow: auto; border-radius: 18px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
   </style>
 </head>
 <body>
@@ -44,63 +39,33 @@
     <div class="header">
       <div>
         <h1>Insights de visitantes</h1>
-        <p>Painel com contador global do site e detalhes locais deste navegador.</p>
+        <p>Painel 100% global (igual em qualquer computador).</p>
       </div>
       <a href="/">← Voltar ao site</a>
     </div>
 
     <section class="stats">
-      <article class="card"><h3>Total global do site</h3><strong id="global-total-visits">...</strong></article>
-      <article class="card"><h3>Total de visitas</h3><strong id="total-visits">0</strong></article>
-      <article class="card"><h3>Visitantes únicos</h3><strong id="unique-visitors">0</strong></article>
-      <article class="card"><h3>Visitas hoje</h3><strong id="visits-today">0</strong></article>
-      <article class="card"><h3>Últimos 7 dias</h3><strong id="visits-7d">0</strong></article>
-      <article class="card"><h3>Última visita</h3><strong id="last-visit" style="font-size:1rem; line-height:1.4;">Sem dados</strong></article>
+      <article class="card"><h3>Pessoas únicas (global por IP)</h3><strong id="global-unique-visitors">BUSCANDO...</strong></article>
+      <article class="card"><h3>Total de acessos (eventos globais)</h3><strong id="global-total-events">BUSCANDO...</strong></article>
+      <article class="card"><h3>Última atualização do painel</h3><strong id="global-updated-at" style="font-size:1rem; line-height:1.4;">BUSCANDO...</strong></article>
     </section>
-
-    
 
     <section class="lists">
       <article class="card">
         <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Top páginas (global)</h2>
-        <ul id="global-top-pages"></ul>
+        <ul id="global-top-pages"><li><span>BUSCANDO...</span><strong>...</strong></li></ul>
       </article>
       <article class="card">
-        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Observação</h2>
-        <p style="margin:0;">Os dados globais usam contador compartilhado online. Já os detalhes abaixo (idioma, fuso, dispositivo e tabela) continuam locais deste navegador.</p>
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Top países (global)</h2>
+        <ul id="global-top-countries"><li><span>BUSCANDO...</span><strong>...</strong></li></ul>
       </article>
     </section>
 
     <section class="lists">
       <article class="card">
-        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Páginas mais acessadas</h2>
-        <ul id="top-pages"></ul>
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Observação</h2>
+        <p style="margin:0;">Esse painel não usa cache local para dados globais e não exibe métricas locais por navegador. Por isso os números são os mesmos em qualquer computador (quando o serviço global está disponível).</p>
       </article>
-      <article class="card">
-        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Origem dos acessos</h2>
-        <ul id="top-referrers"></ul>
-      </article>
-    </section>
-
-    <section>
-      <h2 style="margin-bottom:.75rem; font-size:1.1rem;">Últimas visitas</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Data/hora</th>
-              <th>Página</th>
-              <th>Origem</th>
-              <th>Idioma</th>
-              <th>Fuso</th>
-              <th>Tela</th>
-              <th>Viewport</th>
-              <th>Dispositivo</th>
-            </tr>
-          </thead>
-          <tbody id="insights-table-body"></tbody>
-        </table>
-      </div>
     </section>
   </main>
 
