@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insights de Visitantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #172026;
+      --muted: #5d6d67;
+      --accent: #4f7f71;
+      --border: rgba(23, 32, 38, 0.08);
+      font-family: "DM Sans", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    .container { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    h1, h2 { font-family: "Space Grotesk", sans-serif; margin: 0; }
+    p { color: var(--muted); }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: flex-end; margin-bottom: 1.6rem; }
+    .header a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .stats { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 1.4rem 0 2rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1rem 1.2rem; box-shadow: 0 8px 28px rgba(15,23,42,.06); }
+    .card h3 { margin: 0 0 .45rem; font-size: .88rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
+    .card strong { font-size: 1.5rem; }
+    .lists { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 1.5rem; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+    li:last-child { border-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    th, td { text-align: left; padding: .72rem .8rem; border-bottom: 1px solid var(--border); font-size: .9rem; }
+    th { background: #f9fbff; font-size: .82rem; color: var(--muted); font-weight: 600; }
+    tr:last-child td { border-bottom: 0; }
+    .table-wrap { overflow: auto; border-radius: 18px; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+  </style>
+</head>
+<body>
+  <main class="container" id="insights-root">
+    <div class="header">
+      <div>
+        <h1>Insights de visitantes</h1>
+        <p>Painel com contador global do site e detalhes locais deste navegador.</p>
+      </div>
+      <a href="/">← Voltar ao site</a>
+    </div>
+
+    <section class="stats">
+      <article class="card"><h3>Total global do site</h3><strong id="global-total-visits">...</strong></article>
+      <article class="card"><h3>Total de visitas</h3><strong id="total-visits">0</strong></article>
+      <article class="card"><h3>Visitantes únicos</h3><strong id="unique-visitors">0</strong></article>
+      <article class="card"><h3>Visitas hoje</h3><strong id="visits-today">0</strong></article>
+      <article class="card"><h3>Últimos 7 dias</h3><strong id="visits-7d">0</strong></article>
+      <article class="card"><h3>Última visita</h3><strong id="last-visit" style="font-size:1rem; line-height:1.4;">Sem dados</strong></article>
+    </section>
+
+    
+
+    <section class="lists">
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Top páginas (global)</h2>
+        <ul id="global-top-pages"></ul>
+      </article>
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Observação</h2>
+        <p style="margin:0;">Os dados globais usam contador compartilhado online. Já os detalhes abaixo (idioma, fuso, dispositivo e tabela) continuam locais deste navegador.</p>
+      </article>
+    </section>
+
+    <section class="lists">
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Páginas mais acessadas</h2>
+        <ul id="top-pages"></ul>
+      </article>
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Origem dos acessos</h2>
+        <ul id="top-referrers"></ul>
+      </article>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:.75rem; font-size:1.1rem;">Últimas visitas</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data/hora</th>
+              <th>Página</th>
+              <th>Origem</th>
+              <th>Idioma</th>
+              <th>Fuso</th>
+              <th>Tela</th>
+              <th>Viewport</th>
+              <th>Dispositivo</th>
+            </tr>
+          </thead>
+          <tbody id="insights-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="../analytics.js" defer></script>
+</body>
+</html>
