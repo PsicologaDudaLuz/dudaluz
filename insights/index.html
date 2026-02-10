@@ -44,17 +44,31 @@
     <div class="header">
       <div>
         <h1>Insights de visitantes</h1>
-        <p>Painel local com os últimos acessos capturados neste navegador.</p>
+        <p>Painel com contador global do site e detalhes locais deste navegador.</p>
       </div>
       <a href="/">← Voltar ao site</a>
     </div>
 
     <section class="stats">
+      <article class="card"><h3>Total global do site</h3><strong id="global-total-visits">...</strong></article>
       <article class="card"><h3>Total de visitas</h3><strong id="total-visits">0</strong></article>
       <article class="card"><h3>Visitantes únicos</h3><strong id="unique-visitors">0</strong></article>
       <article class="card"><h3>Visitas hoje</h3><strong id="visits-today">0</strong></article>
       <article class="card"><h3>Últimos 7 dias</h3><strong id="visits-7d">0</strong></article>
       <article class="card"><h3>Última visita</h3><strong id="last-visit" style="font-size:1rem; line-height:1.4;">Sem dados</strong></article>
+    </section>
+
+    
+
+    <section class="lists">
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Top páginas (global)</h2>
+        <ul id="global-top-pages"></ul>
+      </article>
+      <article class="card">
+        <h2 style="font-size:1.1rem; margin-bottom:.4rem;">Observação</h2>
+        <p style="margin:0;">Os dados globais usam contador compartilhado online. Já os detalhes abaixo (idioma, fuso, dispositivo e tabela) continuam locais deste navegador.</p>
+      </article>
     </section>
 
     <section class="lists">

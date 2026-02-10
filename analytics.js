@@ -1,11 +1,28 @@
 (function () {
-  const VISITOR_ID_KEY = "dudaluz_visitor_id";
-  const VISITS_KEY = "dudaluz_visits";
-  const MAX_STORED_VISITS = 2000;
+  const LOCAL_VISITOR_ID_KEY = "dudaluz_local_visitor_id";
+  const LOCAL_VISITS_KEY = "dudaluz_local_visits";
+  const MAX_LOCAL_VISITS = 2000;
 
-  function safeReadVisits() {
+  // Namespace global compartilhado entre todos os visitantes do site.
+  const GLOBAL_NAMESPACE = "dudaluz_psicologia_site";
+  const GLOBAL_TOTAL_KEY = "site_total_views_v1";
+
+  const KNOWN_PATHS = ["/", "/empresarial.html", "/insights/"];
+
+  function normalizePath(pathname) {
+    if (!pathname || pathname === "") return "/";
+    if (pathname.endsWith("/index.html")) return pathname.replace("index.html", "");
+    return pathname;
+  }
+
+  function pathToKey(path) {
+    const clean = path === "/" ? "home" : path.replace(/[^a-zA-Z0-9]/g, "_");
+    return `path_${clean}_views_v1`;
+  }
+
+  function safeReadLocalVisits() {
     try {
-      const raw = localStorage.getItem(VISITS_KEY);
+      const raw = localStorage.getItem(LOCAL_VISITS_KEY);
       const parsed = raw ? JSON.parse(raw) : [];
       return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
@@ -13,34 +30,48 @@
     }
   }
 
-  function safeWriteVisits(visits) {
+  function safeWriteLocalVisits(visits) {
     try {
-      localStorage.setItem(VISITS_KEY, JSON.stringify(visits.slice(-MAX_STORED_VISITS)));
+      localStorage.setItem(LOCAL_VISITS_KEY, JSON.stringify(visits.slice(-MAX_LOCAL_VISITS)));
     } catch (error) {
-      // Silently ignore storage failures.
+      // Ignora falhas de storage sem quebrar UX.
     }
   }
 
-  function getVisitorId() {
-    const existing = localStorage.getItem(VISITOR_ID_KEY);
-    if (existing) {
-      return existing;
-    }
+  function getLocalVisitorId() {
+    const existing = localStorage.getItem(LOCAL_VISITOR_ID_KEY);
+    if (existing) return existing;
 
     const generated = (self.crypto && crypto.randomUUID)
       ? crypto.randomUUID()
       : `v-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
-    localStorage.setItem(VISITOR_ID_KEY, generated);
+    localStorage.setItem(LOCAL_VISITOR_ID_KEY, generated);
     return generated;
   }
 
-  function collectVisit() {
+  async function countApiHit(key) {
+    const url = `https://api.countapi.xyz/hit/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`;
+    const response = await fetch(url, { method: "GET", cache: "no-store" });
+    if (!response.ok) throw new Error("Falha ao registrar contador global");
+    return response.json();
+  }
+
+  async function countApiGet(key) {
+    const url = `https://api.countapi.xyz/get/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`;
+    const response = await fetch(url, { method: "GET", cache: "no-store" });
+    if (!response.ok) return { value: 0 };
+    const payload = await response.json();
+    return { value: Number(payload.value) || 0 };
+  }
+
+  async function collectVisit() {
+    const path = normalizePath(window.location.pathname || "/");
     const visit = {
       id: `${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-      visitorId: getVisitorId(),
+      visitorId: getLocalVisitorId(),
       timestamp: new Date().toISOString(),
-      path: window.location.pathname || "/",
+      path,
       fullUrl: window.location.href,
       referrer: document.referrer || "direto",
       language: navigator.language || "desconhecido",
@@ -51,25 +82,31 @@
       viewport: `${window.innerWidth}x${window.innerHeight}`
     };
 
-    const visits = safeReadVisits();
+    const visits = safeReadLocalVisits();
     visits.push(visit);
-    safeWriteVisits(visits);
+    safeWriteLocalVisits(visits);
+
+    // Contador global (todos os visitantes/dispositivos).
+    try {
+      await Promise.all([
+        countApiHit(GLOBAL_TOTAL_KEY),
+        countApiHit(pathToKey(path))
+      ]);
+    } catch (error) {
+      // Se rede falhar, o local continua funcionando.
+    }
   }
 
   function formatDateTime(iso) {
     if (!iso) return "-";
     const date = new Date(iso);
-    return Number.isNaN(date.getTime())
-      ? "-"
-      : date.toLocaleString("pt-BR");
+    return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("pt-BR");
   }
 
   function normalizeReferrer(referrer) {
     if (!referrer || referrer === "direto") return "direto";
-
     try {
-      const url = new URL(referrer);
-      return url.hostname;
+      return new URL(referrer).hostname;
     } catch (error) {
       return referrer;
     }
@@ -103,11 +140,45 @@
       .join("");
   }
 
-  function renderInsights() {
+  async function renderGlobalInsights() {
+    const globalTotalEl = document.getElementById("global-total-visits");
+    const globalPagesEl = document.getElementById("global-top-pages");
+    if (!globalTotalEl && !globalPagesEl) return;
+
+    try {
+      const [globalTotal, ...pathCounters] = await Promise.all([
+        countApiGet(GLOBAL_TOTAL_KEY),
+        ...KNOWN_PATHS.map(function (path) { return countApiGet(pathToKey(path)); })
+      ]);
+
+      if (globalTotalEl) {
+        globalTotalEl.textContent = String(globalTotal.value || 0);
+      }
+
+      if (globalPagesEl) {
+        const entries = KNOWN_PATHS
+          .map(function (path, index) { return [path, pathCounters[index].value || 0]; })
+          .sort(function (a, b) { return b[1] - a[1]; });
+
+        globalPagesEl.innerHTML = entries
+          .map(function ([path, total]) { return `<li><span>${path}</span><strong>${total}</strong></li>`; })
+          .join("");
+      }
+    } catch (error) {
+      if (globalTotalEl) globalTotalEl.textContent = "indisponível";
+      if (globalPagesEl) {
+        globalPagesEl.innerHTML = "<li>Falha ao carregar dados globais no momento.</li>";
+      }
+    }
+  }
+
+  async function renderInsights() {
     const root = document.getElementById("insights-root");
     if (!root) return;
 
-    const visits = safeReadVisits().sort(function (a, b) {
+    await renderGlobalInsights();
+
+    const visits = safeReadLocalVisits().sort(function (a, b) {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });
 
@@ -148,7 +219,7 @@
     if (!tableBody) return;
 
     if (!visits.length) {
-      tableBody.innerHTML = '<tr><td colspan="8">Nenhuma visita registrada ainda.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="8">Nenhuma visita registrada neste navegador ainda.</td></tr>';
       return;
     }
 
@@ -163,12 +234,14 @@
           <td>${visit.timezone || "-"}</td>
           <td>${visit.screen || "-"}</td>
           <td>${visit.viewport || "-"}</td>
-          <td title="${visit.userAgent || "-"}">${(visit.platform || "-")}</td>
+          <td title="${visit.userAgent || "-"}">${visit.platform || "-"}</td>
         </tr>`;
       })
       .join("");
   }
 
   collectVisit();
-  document.addEventListener("DOMContentLoaded", renderInsights);
+  document.addEventListener("DOMContentLoaded", function () {
+    renderInsights();
+  });
 })();
