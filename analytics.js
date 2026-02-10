@@ -4,7 +4,7 @@
 
   const KNOWN_PATHS = ["/", "/empresarial.html"];
   const KNOWN_REFERRERS = ["direto", "google.com", "instagram.com", "facebook.com", "linkedin.com", "t.co", "whatsapp.com"];
-  const KNOWN_DEVICES = ["Android", "iPhone", "Windows", "Linux", "Mac", "iPad", "Outro"];
+  const KNOWN_DEVICES = ["Android", "Iphone", "Computador"];
 
   const COUNTER_API_BASE_URL = "https://api.counterapi.dev/v1";
   const COUNT_API_COOLDOWN_MS = 10 * 60 * 1000;
@@ -37,6 +37,29 @@
     return `device_${sanitizeKeyPart(device)}_views_v2`;
   }
 
+  function dayToKey(day) {
+    return `day_${day}_views_v1`;
+  }
+
+  function formatDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}_${month}_${day}`;
+  }
+
+  function lastNDaysKeys(days) {
+    const keys = [];
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    for (let i = 0; i < days; i += 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      keys.push(dayToKey(formatDateKey(d)));
+    }
+    return keys;
+  }
+
   function normalizeReferrer(referrer) {
     if (!referrer) return "direto";
     try {
@@ -49,13 +72,9 @@
 
   function detectDeviceType() {
     const ua = (navigator.userAgent || "").toLowerCase();
-    if (ua.includes("iphone") || ua.includes("ipod")) return "iPhone";
-    if (ua.includes("ipad")) return "iPad";
+    if (ua.includes("iphone") || ua.includes("ipod")) return "Iphone";
     if (ua.includes("android")) return "Android";
-    if (ua.includes("windows")) return "Windows";
-    if (ua.includes("linux")) return "Linux";
-    if (ua.includes("mac os") || ua.includes("macintosh")) return "Mac";
-    return "Outro";
+    return "Computador";
   }
 
   async function requestCounterApi(path, defaultPayload) {
@@ -95,6 +114,7 @@
     try {
       await Promise.all([
         countApiHit(GLOBAL_TOTAL_KEY),
+        countApiHit(dayToKey(formatDateKey(new Date()))),
         countApiHit(pathToKey(path)),
         countApiHit(referrerToKey(referrer)),
         countApiHit(deviceToKey(device))
@@ -121,6 +141,9 @@
     if (!root) return;
 
     const globalTotalEl = document.getElementById("global-total-visits");
+    const todayVisitsEl = document.getElementById("global-visits-today");
+    const visits7dEl = document.getElementById("global-visits-7d");
+    const visits30dEl = document.getElementById("global-visits-30d");
     const globalPagesEl = document.getElementById("global-top-pages");
     const globalReferrersEl = document.getElementById("global-top-referrers");
     const globalDevicesEl = document.getElementById("global-top-devices");
@@ -137,6 +160,20 @@
         .map(function (path, index) { return [path, pathCounts[index].value || 0]; })
         .sort(function (a, b) { return b[1] - a[1]; });
       renderList(globalPagesEl, pageEntries, "Sem dados");
+
+      const [todayCounts, last7Counts, last30Counts] = await Promise.all([
+        Promise.all(lastNDaysKeys(1).map(function (key) { return countApiGet(key); })),
+        Promise.all(lastNDaysKeys(7).map(function (key) { return countApiGet(key); })),
+        Promise.all(lastNDaysKeys(30).map(function (key) { return countApiGet(key); }))
+      ]);
+
+      const sumValues = function (items) {
+        return items.reduce(function (acc, item) { return acc + (item.value || 0); }, 0);
+      };
+
+      if (todayVisitsEl) todayVisitsEl.textContent = String(sumValues(todayCounts));
+      if (visits7dEl) visits7dEl.textContent = String(sumValues(last7Counts));
+      if (visits30dEl) visits30dEl.textContent = String(sumValues(last30Counts));
 
       const referrerCounts = await Promise.all(KNOWN_REFERRERS.map(function (referrer) {
         return countApiGet(referrerToKey(referrer));
@@ -158,6 +195,9 @@
       renderList(globalDevicesEl, deviceEntries, "Sem dispositivos registrados");
     } catch (error) {
       if (globalTotalEl) globalTotalEl.textContent = "indisponível";
+      if (todayVisitsEl) todayVisitsEl.textContent = "indisponível";
+      if (visits7dEl) visits7dEl.textContent = "indisponível";
+      if (visits30dEl) visits30dEl.textContent = "indisponível";
       renderList(globalPagesEl, [], "Falha ao carregar páginas");
       renderList(globalReferrersEl, [], "Falha ao carregar origens");
       renderList(globalDevicesEl, [], "Falha ao carregar dispositivos");
