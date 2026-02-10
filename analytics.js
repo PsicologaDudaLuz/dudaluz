@@ -5,11 +5,42 @@
 
   // Namespace global compartilhado entre todos os visitantes do site.
   const GLOBAL_NAMESPACE = "dudaluz_psicologia_site";
-  const GLOBAL_TOTAL_KEY = "site_total_views_v1";
-  const GEO_CACHE_KEY = "dudaluz_geo_cache_v1";
-  const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+  const GLOBAL_UNIQUE_VISITORS_KEY = "site_unique_visitors_v2";
+  const COUNTER_ENDPOINTS = ["https://api.countapi.xyz", "https://countapi.xyz"];
+  const COUNTER_DOWN_SESSION_KEY = "dudaluz_counter_down_session_v1";
+  let globalCounterDown = false;
+
+  try {
+    globalCounterDown = sessionStorage.getItem(COUNTER_DOWN_SESSION_KEY) === "1";
+  } catch (error) {
+    globalCounterDown = false;
+  }
 
   const KNOWN_PATHS = ["/", "/empresarial.html", "/insights/"];
+  const GLOBAL_COUNTRIES = [
+    "Afeganistão", "África do Sul", "Albânia", "Alemanha", "Andorra", "Angola", "Antígua e Barbuda", "Arábia Saudita", "Argélia", "Argentina", "Armênia", "Austrália", "Áustria", "Azerbaijão", "Bahamas", "Bangladesh", "Barbados", "Barein", "Bélgica", "Belize", "Benin", "Belarus", "Bolívia", "Bósnia e Herzegovina", "Botsuana", "Brasil", "Brunei", "Bulgária", "Burkina Faso", "Burundi", "Butão", "Cabo Verde", "Camarões", "Camboja", "Canadá", "Catar", "Cazaquistão", "Chade", "Chile", "China", "Chipre", "Cingapura", "Colômbia", "Comores", "Congo", "Coreia do Norte", "Coreia do Sul", "Costa do Marfim", "Costa Rica", "Croácia", "Cuba", "Dinamarca", "Djibuti", "Dominica", "Egito", "El Salvador", "Emirados Árabes Unidos", "Equador", "Eritreia", "Eslováquia", "Eslovênia", "Espanha", "Estados Unidos", "Estônia", "Eswatini", "Etiópia", "Fiji", "Filipinas", "Finlândia", "França", "Gabão", "Gâmbia", "Gana", "Geórgia", "Granada", "Grécia", "Guatemala", "Guiana", "Guiné", "Guiné Equatorial", "Guiné-Bissau", "Haiti", "Honduras", "Hungria", "Iêmen", "Ilhas Marshall", "Índia", "Indonésia", "Irã", "Iraque", "Irlanda", "Islândia", "Israel", "Itália", "Jamaica", "Japão", "Jordânia", "Kiribati", "Kuwait", "Laos", "Lesoto", "Letônia", "Líbano", "Libéria", "Líbia", "Liechtenstein", "Lituânia", "Luxemburgo", "Macedônia do Norte", "Madagascar", "Malásia", "Malawi", "Maldivas", "Mali", "Malta", "Marrocos", "Maurícia", "Mauritânia", "México", "Micronésia", "Moçambique", "Moldávia", "Mônaco", "Mongólia", "Montenegro", "Myanmar", "Namíbia", "Nauru", "Nepal", "Nicarágua", "Níger", "Nigéria", "Noruega", "Nova Zelândia", "Omã", "Países Baixos", "Palau", "Panamá", "Papua-Nova Guiné", "Paquistão", "Paraguai", "Peru", "Polônia", "Portugal", "Quênia", "Quirguistão", "Reino Unido", "República Centro-Africana", "República Democrática do Congo", "República Dominicana", "República Tcheca", "Romênia", "Ruanda", "Rússia", "Samoa", "San Marino", "Santa Lúcia", "São Cristóvão e Nevis", "São Tomé e Príncipe", "São Vicente e Granadinas", "Seicheles", "Senegal", "Serra Leoa", "Sérvia", "Síria", "Somália", "Sri Lanka", "Sudão", "Sudão do Sul", "Suécia", "Suíça", "Suriname", "Tailândia", "Taiwan", "Tajiquistão", "Tanzânia", "Timor-Leste", "Togo", "Tonga", "Trinidad e Tobago", "Tunísia", "Turcomenistão", "Turquia", "Tuvalu", "Ucrânia", "Uganda", "Uruguai", "Uzbequistão", "Vanuatu", "Vaticano", "Venezuela", "Vietnã", "Zâmbia", "Zimbábue", "Desconhecido"
+  ];
+
+  function sanitizeKey(value) {
+    return String(value || "desconhecido").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
+  }
+
+  function locationToKey(prefix, value) {
+    return `${prefix}_${sanitizeKey(value)}_unique_v2`;
+  }
+
+  function ipSeenKey(ip) {
+    return `ip_${sanitizeKey(ip)}_seen_v2`;
+  }
+
+  function pathSeenKey(path, ip) {
+    return `path_${sanitizeKey(path)}_ip_${sanitizeKey(ip)}_seen_v2`;
+  }
+
+  function pathToKey(path) {
+    const clean = path === "/" ? "home" : sanitizeKey(path);
+    return `path_${clean}_unique_v2`;
+  }
 
   function locationToKey(prefix, value) {
     const clean = String(value || "desconhecido").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
@@ -75,11 +106,6 @@
     return pathname;
   }
 
-  function pathToKey(path) {
-    const clean = path === "/" ? "home" : path.replace(/[^a-zA-Z0-9]/g, "_");
-    return `path_${clean}_views_v1`;
-  }
-
   function safeReadLocalVisits() {
     try {
       const raw = localStorage.getItem(LOCAL_VISITS_KEY);
@@ -110,19 +136,82 @@
     return generated;
   }
 
+  async function resolveVisitorGeo() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function () { controller.abort(); }, 3000);
+      const response = await fetch("https://ipwho.is/", { method: "GET", cache: "no-store", signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error("Falha ao obter geolocalização");
+
+      const payload = await response.json();
+      return {
+        ip: payload.ip || "desconhecido",
+        country: payload.country || "Desconhecido",
+        city: payload.city || "Desconhecida"
+      };
+    } catch (error) {
+      return { ip: "desconhecido", country: "Desconhecido", city: "Desconhecida" };
+    }
+  }
+
+  function markGlobalCounterDown() {
+    globalCounterDown = true;
+    try {
+      sessionStorage.setItem(COUNTER_DOWN_SESSION_KEY, "1");
+    } catch (error) {
+      // Sem persistência, segue em memória.
+    }
+  }
+
+  function markGlobalCounterUp() {
+    globalCounterDown = false;
+    try {
+      sessionStorage.removeItem(COUNTER_DOWN_SESSION_KEY);
+    } catch (error) {
+      // Sem persistência, segue em memória.
+    }
+  }
+
+  async function requestCounter(pathname) {
+    if (globalCounterDown) {
+      throw new Error("COUNTER_OFFLINE");
+    }
+
+    let lastError = null;
+    for (const baseUrl of COUNTER_ENDPOINTS) {
+      try {
+        const response = await fetch(`${baseUrl}${pathname}`, { method: "GET", cache: "no-store" });
+        if (!response.ok) throw new Error(`Counter indisponível em ${baseUrl}`);
+        markGlobalCounterUp();
+        return await response.json();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    markGlobalCounterDown();
+    throw lastError || new Error("Falha ao consultar contador global");
+  }
+
   async function countApiHit(key) {
-    const url = `https://api.countapi.xyz/hit/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`;
-    const response = await fetch(url, { method: "GET", cache: "no-store" });
-    if (!response.ok) throw new Error("Falha ao registrar contador global");
-    return response.json();
+    return requestCounter(`/hit/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`);
   }
 
   async function countApiGet(key) {
-    const url = `https://api.countapi.xyz/get/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`;
-    const response = await fetch(url, { method: "GET", cache: "no-store" });
-    if (!response.ok) return { value: 0 };
-    const payload = await response.json();
+    const payload = await requestCounter(`/get/${encodeURIComponent(GLOBAL_NAMESPACE)}/${encodeURIComponent(key)}`);
     return { value: Number(payload.value) || 0 };
+  }
+
+  async function ensureUniqueHitOnce(uniqueMarkerKey, aggregateKeys) {
+    const marker = await countApiGet(uniqueMarkerKey);
+    if ((marker.value || 0) > 0) return false;
+
+    await Promise.all([
+      countApiHit(uniqueMarkerKey),
+      ...aggregateKeys.map(function (key) { return countApiHit(key); })
+    ]);
+    return true;
   }
 
   async function collectVisit() {
@@ -142,19 +231,22 @@
       screen: `${window.screen.width}x${window.screen.height}`,
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       country: geo.country,
-      city: geo.city
+      city: geo.city,
+      ip: geo.ip
     };
 
     const visits = safeReadLocalVisits();
     visits.push(visit);
     safeWriteLocalVisits(visits);
 
-    // Contador global (todos os visitantes/dispositivos).
     try {
-      await Promise.all([
-        countApiHit(GLOBAL_TOTAL_KEY),
-        countApiHit(pathToKey(path)),
-        countApiHit(locationToKey("country", geo.country))
+      await ensureUniqueHitOnce(ipSeenKey(geo.ip), [
+        GLOBAL_UNIQUE_VISITORS_KEY,
+        locationToKey("country", geo.country)
+      ]);
+
+      await ensureUniqueHitOnce(pathSeenKey(path, geo.ip), [
+        pathToKey(path)
       ]);
     } catch (error) {
       // Se rede falhar, o local continua funcionando.
@@ -204,15 +296,27 @@
       .join("");
   }
 
+  function setGlobalLoadingState() {
+    const globalTotalEl = document.getElementById("global-total-visitors");
+    const globalPagesEl = document.getElementById("global-top-pages");
+    const globalCountriesEl = document.getElementById("global-top-countries");
+
+    if (globalTotalEl) globalTotalEl.textContent = "BUSCANDO...";
+    if (globalPagesEl) globalPagesEl.innerHTML = "<li><span>BUSCANDO...</span><strong>...</strong></li>";
+    if (globalCountriesEl) globalCountriesEl.innerHTML = "<li><span>BUSCANDO...</span><strong>...</strong></li>";
+  }
+
   async function renderGlobalInsights() {
-    const globalTotalEl = document.getElementById("global-total-visits");
+    const globalTotalEl = document.getElementById("global-total-visitors");
     const globalPagesEl = document.getElementById("global-top-pages");
     const globalCountriesEl = document.getElementById("global-top-countries");
     if (!globalTotalEl && !globalPagesEl && !globalCountriesEl) return;
 
+    setGlobalLoadingState();
+
     try {
       const [globalTotal, ...pathCounters] = await Promise.all([
-        countApiGet(GLOBAL_TOTAL_KEY),
+        countApiGet(GLOBAL_UNIQUE_VISITORS_KEY),
         ...KNOWN_PATHS.map(function (path) { return countApiGet(pathToKey(path)); })
       ]);
 
@@ -231,19 +335,15 @@
       }
 
       if (globalCountriesEl) {
-        const countries = [
-          "Brasil", "Portugal", "Estados Unidos", "Argentina", "Espanha", "Alemanha", "França", "Itália", "Reino Unido", "Canadá", "Desconhecido"
-        ];
-
-        const countryCounters = await Promise.all(countries.map(function (country) {
+        const countryCounters = await Promise.all(GLOBAL_COUNTRIES.map(function (country) {
           return countApiGet(locationToKey("country", country));
         }));
 
-        const entries = countries
+        const entries = GLOBAL_COUNTRIES
           .map(function (country, index) { return [country, countryCounters[index].value || 0]; })
           .filter(function (entry) { return entry[1] > 0; })
           .sort(function (a, b) { return b[1] - a[1]; })
-          .slice(0, 8);
+          .slice(0, 10);
 
         globalCountriesEl.innerHTML = entries.length
           ? entries.map(function ([country, total]) { return `<li><span>${country}</span><strong>${total}</strong></li>`; }).join("")
@@ -252,7 +352,10 @@
     } catch (error) {
       if (globalTotalEl) globalTotalEl.textContent = "indisponível";
       if (globalPagesEl) {
-        globalPagesEl.innerHTML = "<li>Falha ao carregar dados globais no momento.</li>";
+        globalPagesEl.innerHTML = "<li>Contador global indisponível no momento.</li>";
+      }
+      if (globalCountriesEl) {
+        globalCountriesEl.innerHTML = "<li>Contador global indisponível no momento.</li>";
       }
       if (globalCountriesEl) {
         globalCountriesEl.innerHTML = "<li>Falha ao carregar países globais no momento.</li>";
