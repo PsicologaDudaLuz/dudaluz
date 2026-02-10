@@ -42,6 +42,64 @@
     return `path_${clean}_unique_v2`;
   }
 
+  function locationToKey(prefix, value) {
+    const clean = String(value || "desconhecido").toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
+    return `${prefix}_${clean}_views_v1`;
+  }
+
+  function readGeoCache() {
+    try {
+      const raw = localStorage.getItem(GEO_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.savedAt) return null;
+      if ((Date.now() - Number(parsed.savedAt)) > GEO_CACHE_TTL_MS) return null;
+      return parsed;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeGeoCache(payload) {
+    try {
+      localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({
+        country: payload.country || "Desconhecido",
+        city: payload.city || "Desconhecida",
+        savedAt: Date.now()
+      }));
+    } catch (error) {
+      // Ignora falhas de storage.
+    }
+  }
+
+  async function resolveVisitorGeo() {
+    const cached = readGeoCache();
+    if (cached) {
+      return {
+        country: cached.country || "Desconhecido",
+        city: cached.city || "Desconhecida"
+      };
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(function () { controller.abort(); }, 2500);
+      const response = await fetch("https://ipwho.is/", { method: "GET", cache: "no-store", signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error("Falha ao obter geolocalização");
+
+      const payload = await response.json();
+      const geo = {
+        country: payload.country || "Desconhecido",
+        city: payload.city || "Desconhecida"
+      };
+      writeGeoCache(geo);
+      return geo;
+    } catch (error) {
+      return { country: "Desconhecido", city: "Desconhecida" };
+    }
+  }
+
   function normalizePath(pathname) {
     if (!pathname || pathname === "") return "/";
     if (pathname.endsWith("/index.html")) return pathname.replace("index.html", "");
@@ -298,6 +356,9 @@
       }
       if (globalCountriesEl) {
         globalCountriesEl.innerHTML = "<li>Contador global indisponível no momento.</li>";
+      }
+      if (globalCountriesEl) {
+        globalCountriesEl.innerHTML = "<li>Falha ao carregar países globais no momento.</li>";
       }
     }
   }
