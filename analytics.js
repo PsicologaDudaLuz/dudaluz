@@ -57,6 +57,14 @@
     return `city_${sanitizeKeyPart(city)}_views_v1`;
   }
 
+  function stateDayToKey(state, day) {
+    return `state_${sanitizeKeyPart(state)}_day_${day}_views_v1`;
+  }
+
+  function cityDayToKey(city, day) {
+    return `city_${sanitizeKeyPart(city)}_day_${day}_views_v1`;
+  }
+
   function dayToKey(day) {
     return `day_${day}_views_v1`;
   }
@@ -153,16 +161,19 @@
     const referrer = normalizeReferrer(document.referrer || "");
     const device = detectDeviceType();
     const geo = await resolveVisitorGeo();
+    const todayKey = formatDateKey(new Date());
 
     try {
       await Promise.all([
         countApiHit(GLOBAL_TOTAL_KEY),
-        countApiHit(dayToKey(formatDateKey(new Date()))),
+        countApiHit(dayToKey(todayKey)),
         countApiHit(pathToKey(path)),
         countApiHit(referrerToKey(referrer)),
         countApiHit(deviceToKey(device)),
         countApiHit(stateToKey(geo.state)),
-        countApiHit(cityToKey(geo.city))
+        countApiHit(cityToKey(geo.city)),
+        countApiHit(stateDayToKey(geo.state, todayKey)),
+        countApiHit(cityDayToKey(geo.city, todayKey))
       ]);
     } catch (error) {
       // Falha de rede não deve quebrar a navegação.
@@ -241,25 +252,34 @@
         .sort(function (a, b) { return b[1] - a[1]; });
       renderList(globalDevicesEl, deviceEntries, "Sem dispositivos registrados");
 
-      const stateCounts = await Promise.all(KNOWN_STATES.map(function (state) {
-        return countApiGet(stateToKey(state));
+      const last15Days = lastNDaysKeys(15).map(function (key) {
+        return key.replace(/^day_/, "").replace(/_views_v1$/, "");
+      });
+      const stateCounts = await Promise.all(KNOWN_STATES.map(async function (state) {
+        const daily = await Promise.all(last15Days.map(function (day) {
+          return countApiGet(stateDayToKey(state, day));
+        }));
+        return daily.reduce(function (acc, item) { return acc + (item.value || 0); }, 0);
       }));
       const stateEntries = KNOWN_STATES
-        .map(function (state, index) { return [state, stateCounts[index].value || 0]; })
+        .map(function (state, index) { return [state, stateCounts[index] || 0]; })
         .filter(function (entry) { return entry[1] > 0; })
         .sort(function (a, b) { return b[1] - a[1]; })
         .slice(0, 10);
-      renderList(globalStatesEl, stateEntries, "Sem estados registrados");
+      renderList(globalStatesEl, stateEntries, "Sem estados registrados (15 dias)");
 
-      const cityCounts = await Promise.all(KNOWN_CITIES.map(function (city) {
-        return countApiGet(cityToKey(city));
+      const cityCounts = await Promise.all(KNOWN_CITIES.map(async function (city) {
+        const daily = await Promise.all(last15Days.map(function (day) {
+          return countApiGet(cityDayToKey(city, day));
+        }));
+        return daily.reduce(function (acc, item) { return acc + (item.value || 0); }, 0);
       }));
       const cityEntries = KNOWN_CITIES
-        .map(function (city, index) { return [city, cityCounts[index].value || 0]; })
+        .map(function (city, index) { return [city, cityCounts[index] || 0]; })
         .filter(function (entry) { return entry[1] > 0; })
         .sort(function (a, b) { return b[1] - a[1]; })
         .slice(0, 10);
-      renderList(globalCitiesEl, cityEntries, "Sem cidades registradas");
+      renderList(globalCitiesEl, cityEntries, "Sem cidades registradas (15 dias)");
     } catch (error) {
       if (globalTotalEl) globalTotalEl.textContent = "indisponível";
       if (todayVisitsEl) todayVisitsEl.textContent = "indisponível";
