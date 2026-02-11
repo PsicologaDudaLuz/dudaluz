@@ -5,6 +5,18 @@
   const KNOWN_PATHS = ["/", "/empresarial.html"];
   const KNOWN_REFERRERS = ["direto", "google.com", "instagram.com", "facebook.com", "linkedin.com", "t.co", "whatsapp.com"];
   const KNOWN_DEVICES = ["Android", "Iphone", "Computador"];
+  const KNOWN_STATES = [
+    "Acre", "Alagoas", "Amapa", "Amazonas", "Bahia", "Ceara", "Distrito Federal", "Espirito Santo", "Goias",
+    "Maranhao", "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Para", "Paraiba", "Parana", "Pernambuco",
+    "Piaui", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondonia", "Roraima", "Santa Catarina",
+    "Sao Paulo", "Sergipe", "Tocantins", "Desconhecido"
+  ];
+  const KNOWN_CITIES = [
+    "Sao Paulo", "Rio de Janeiro", "Brasilia", "Salvador", "Fortaleza", "Belo Horizonte", "Manaus", "Curitiba",
+    "Recife", "Porto Alegre", "Goiania", "Belem", "Guarulhos", "Campinas", "Sao Luis", "Maceio", "Natal",
+    "Joao Pessoa", "Teresina", "Aracaju", "Florianopolis", "Vitoria", "Cuiaba", "Campo Grande", "Palmas",
+    "Boa Vista", "Rio Branco", "Macapa", "Porto Velho", "Desconhecida"
+  ];
 
   const COUNTER_API_BASE_URL = "https://api.counterapi.dev/v1";
   const COUNT_API_COOLDOWN_MS = 10 * 60 * 1000;
@@ -37,6 +49,14 @@
     return `device_${sanitizeKeyPart(device)}_views_v2`;
   }
 
+  function stateToKey(state) {
+    return `state_${sanitizeKeyPart(state)}_views_v1`;
+  }
+
+  function cityToKey(city) {
+    return `city_${sanitizeKeyPart(city)}_views_v1`;
+  }
+
   function dayToKey(day) {
     return `day_${day}_views_v1`;
   }
@@ -67,6 +87,28 @@
       return host.replace(/^www\./, "");
     } catch (error) {
       return "direto";
+    }
+  }
+
+  function normalizeGeoLabel(value, fallback) {
+    if (!value || typeof value !== "string") return fallback;
+    return value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim() || fallback;
+  }
+
+  async function resolveVisitorGeo() {
+    try {
+      const response = await fetch("https://ipwho.is/", { method: "GET", cache: "no-store", keepalive: true });
+      if (!response.ok) return { state: "Desconhecido", city: "Desconhecida" };
+      const payload = await response.json();
+      return {
+        state: normalizeGeoLabel(payload.region, "Desconhecido"),
+        city: normalizeGeoLabel(payload.city, "Desconhecida")
+      };
+    } catch (error) {
+      return { state: "Desconhecido", city: "Desconhecida" };
     }
   }
 
@@ -110,6 +152,7 @@
 
     const referrer = normalizeReferrer(document.referrer || "");
     const device = detectDeviceType();
+    const geo = await resolveVisitorGeo();
 
     try {
       await Promise.all([
@@ -117,7 +160,9 @@
         countApiHit(dayToKey(formatDateKey(new Date()))),
         countApiHit(pathToKey(path)),
         countApiHit(referrerToKey(referrer)),
-        countApiHit(deviceToKey(device))
+        countApiHit(deviceToKey(device)),
+        countApiHit(stateToKey(geo.state)),
+        countApiHit(cityToKey(geo.city))
       ]);
     } catch (error) {
       // Falha de rede não deve quebrar a navegação.
@@ -147,6 +192,8 @@
     const globalPagesEl = document.getElementById("global-top-pages");
     const globalReferrersEl = document.getElementById("global-top-referrers");
     const globalDevicesEl = document.getElementById("global-top-devices");
+    const globalStatesEl = document.getElementById("global-top-states");
+    const globalCitiesEl = document.getElementById("global-top-cities");
 
     try {
       const [total, ...pathCounts] = await Promise.all([
@@ -193,6 +240,26 @@
         .filter(function (entry) { return entry[1] > 0; })
         .sort(function (a, b) { return b[1] - a[1]; });
       renderList(globalDevicesEl, deviceEntries, "Sem dispositivos registrados");
+
+      const stateCounts = await Promise.all(KNOWN_STATES.map(function (state) {
+        return countApiGet(stateToKey(state));
+      }));
+      const stateEntries = KNOWN_STATES
+        .map(function (state, index) { return [state, stateCounts[index].value || 0]; })
+        .filter(function (entry) { return entry[1] > 0; })
+        .sort(function (a, b) { return b[1] - a[1]; })
+        .slice(0, 10);
+      renderList(globalStatesEl, stateEntries, "Sem estados registrados");
+
+      const cityCounts = await Promise.all(KNOWN_CITIES.map(function (city) {
+        return countApiGet(cityToKey(city));
+      }));
+      const cityEntries = KNOWN_CITIES
+        .map(function (city, index) { return [city, cityCounts[index].value || 0]; })
+        .filter(function (entry) { return entry[1] > 0; })
+        .sort(function (a, b) { return b[1] - a[1]; })
+        .slice(0, 10);
+      renderList(globalCitiesEl, cityEntries, "Sem cidades registradas");
     } catch (error) {
       if (globalTotalEl) globalTotalEl.textContent = "indisponível";
       if (todayVisitsEl) todayVisitsEl.textContent = "indisponível";
@@ -201,6 +268,8 @@
       renderList(globalPagesEl, [], "Falha ao carregar páginas");
       renderList(globalReferrersEl, [], "Falha ao carregar origens");
       renderList(globalDevicesEl, [], "Falha ao carregar dispositivos");
+      renderList(globalStatesEl, [], "Falha ao carregar estados");
+      renderList(globalCitiesEl, [], "Falha ao carregar cidades");
     }
   }
 
