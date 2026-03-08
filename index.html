@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -36,13 +37,14 @@
             <a class="btn ghost secondary" href="mailto:contato@psicologaluz.com.br">Enviar e-mail</a>
           </div>
           <div class="hero__chips">
-            <span>On-line</span>
             <span>Presencial</span>
+            <span>Ambiente acolhedor</span>
             <span>Horários flexíveis</span>
-            <span>Primeira conversa guiada</span>
+            <span>S&atilde;o Jos&eacute; &middot; SC</span>
+            <span>Seguro</span>
           </div>
           <ul class="hero__list">
-            <li>Atendimento seguro, ético e confidencial, on-line e presencial, em ambiente protegido e acolhedor.</li>
+            <li>Atendimento seguro, ético e confidencial, on-line, em ambiente protegido.</li>
             <li>O trabalho é baseado na Terapia Cognitivo-Comportamental (TCC), com foco em compreender padrões e desenvolver formas mais funcionais de lidar com pensamentos, emoções e comportamentos.</li>
             <li>Além do atendimento clínico, também realizo atendimento corporativo para empresas, com palestras, treinamentos, pesquisas de clima e ações em saúde mental voltadas ao bem-estar dos colaboradores.</li>
           </ul>
@@ -50,7 +52,7 @@
         <div class="hero__trust">
           <div class="hero__photo">
             <img src="Eu.jpeg" alt="Maria Eduarda Luz no consultório" loading="lazy">
-            <span class="hero__photo-badge">Atendimento on-line e presencial</span>
+            <span class="hero__photo-badge">Atendimento on-line</span>
           </div>
         </div>
       </div>
@@ -60,9 +62,8 @@
             <span>Agenda aberta</span>
             <small>Novas vagas</small>
           </div>
-          <p>Atendimentos on-line e presenciais com agenda aberta.</p>
+          <p>Atendimentos com agenda remota para todo o Brasil.</p>
           <ul>
-            <li>Modalidade on-line e presencial.</li>
             <li>Horários matinais e noturnos.</li>
             <li>Tempo médio de resposta: 2 horas úteis.</li>
           </ul>
@@ -180,15 +181,26 @@
               <p class="tag">Atendimento presencial</p>
               <h3>Clínica Mente e Bem Estar - Psicologia</h3>
               <p>Rua João Grumiche, 1712 · Sala 404 · Roçado<br>São José - SC · CEP 88108-100</p>
-              <a class="inline-link" href="https://www.google.com/maps/search/?api=1&query=Rua+Jo%C3%A3o+Grumiche+1712+Sala+404+Ro%C3%A7ado+S%C3%A3o+Jos%C3%A9+SC+88108-100" target="_blank" rel="noreferrer">Ver no Maps</a>
+              <div class="contact__location-pills">
+                <span>Presencial</span>
+                <span>Ambiente acolhedor</span>
+                <span>Seguro</span>
+                <span>São José · SC</span>
+              </div>
+              <a class="contact__location-link contact__location-link--solid" href="https://www.google.com/maps/dir/?api=1&destination=-27.5904876,-48.6206712" target="_blank" rel="noreferrer">Como chegar</a>
             </div>
-            <div class="contact__map-frame" aria-label="Mapa da Clínica Mente e Bem Estar">
-              <iframe
-                src="https://www.google.com/maps?q=Rua+Jo%C3%A3o+Grumiche+1712+Sala+404+Ro%C3%A7ado+S%C3%A3o+Jos%C3%A9+SC+88108-100&output=embed"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                title="Mapa da Clínica Mente e Bem Estar - Psicologia">
-              </iframe>
+            <div class="contact__map-shell" aria-label="Mapa estilizado da Clínica Mente e Bem Estar">
+              <div class="contact__map-glow" aria-hidden="true"></div>
+              <div
+                id="contact-map"
+                class="contact__map"
+                title="Mapa do endereço R. João Grumiche, 1712 - 404 - Roçado, São José - SC, 88108-100"
+                >
+              </div>
+              <div class="contact__map-badge">
+                <strong>Clínica Mente e Bem Estar</strong>
+                <span>Atendimento presencial em São José · SC</span>
+              </div>
             </div>
           </div>
         </div>
@@ -237,25 +249,43 @@
       © <span id="year"></span> Maria Eduarda Luz. Todos os direitos reservados.
     </p>
   </footer>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="analytics.js" defer></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var mapElement = document.getElementById("contact-map");
+      if (!mapElement || typeof L === "undefined") return;
+
+      var clinicCoordinates = [-27.5906296, -48.6206712];
+      var map = L.map("contact-map", {
+        zoomControl: false,
+        attributionControl: false,
+        scrollWheelZoom: false,
+        tap: false
+      }).setView(clinicCoordinates, 16);
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        maxZoom: 20,
+        subdomains: "abcd"
+      }).addTo(map);
+
+      var pinHtml =
+        '<div style="width:22px;height:22px;background:#5fa58f;border:2px solid #2c3f3a;border-radius:22px 22px 22px 0;transform:rotate(-45deg);box-shadow:0 4px 10px rgba(0,0,0,.22);position:relative;">' +
+        '<span style="position:absolute;width:8px;height:8px;background:#eaf5f1;border-radius:50%;top:5px;left:5px;"></span>' +
+        '</div>';
+
+      var pinIcon = L.divIcon({
+        className: "",
+        html: pinHtml,
+        iconSize: [22, 22],
+        iconAnchor: [11, 22]
+      });
+
+      L.marker(clinicCoordinates, { icon: pinIcon }).addTo(map);
+    });
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
